@@ -1,0 +1,61 @@
+name: NEX-GDDP-CMIP6 Thailand
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: "Scenarios (space-separated)"
+        default: "historical ssp245 ssp585"
+      variables:
+        description: "Variables (space-separated)"
+        default: "tasmax tasmin tas hurs sfcWind rsds rlds pr"
+      models:
+        description: "Models to fetch (space-separated); leave empty for all"
+        default: ""
+      hf_repo:
+        description: "Hugging Face dataset"
+        default: "smalltee2UPSEEN/nexgddp-cmip6-thailand"
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - id: plan
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python nexgddp.py plan --hf-repo "${{ inputs.hf_repo }}" \
+            --scenarios ${{ inputs.scenarios }} ${{ inputs.models && format('--models {0}', inputs.models) || '' }}
+
+  fetch:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    name: ${{ matrix.model }} ${{ matrix.scenario }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python nexgddp.py fetch --model "${{ matrix.model }}" --scenario "${{ matrix.scenario }}" \
+            --variables ${{ inputs.variables }} --hf-repo "${{ inputs.hf_repo }}"
