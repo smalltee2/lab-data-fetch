@@ -69,6 +69,7 @@
 <header><div class="wrap bar">
   <div><div class="brand">Lab Monitor</div><div class="stamp" id="stamp">กำลังโหลด…</div></div>
   <nav>
+    <a class="btn" id="invite" href="#" target="_blank" rel="noopener" style="border-color:var(--blue);color:var(--blue)">+ เพิ่มนิสิต</a>
     <a class="btn" id="board" href="#" target="_blank" rel="noopener">บอร์ดงาน</a>
     <a class="btn" href="https://huggingface.co/smalltee2UPSEEN" target="_blank" rel="noopener">Hugging Face</a>
     <a class="btn" id="refresh" href="#" target="_blank" rel="noopener" title="เปิด GitHub แล้วกด Run workflow เพื่ออัปเดตทันที">อัปเดตเดี๋ยวนี้</a>
@@ -83,6 +84,8 @@
   <section class="grid3" id="projects"></section>
   <h2>การดาวน์โหลดข้อมูล (GitHub Actions → Hugging Face)</h2>
   <section id="pipelines"></section>
+  <h2>สมาชิก organization บน Hugging Face</h2>
+  <section class="card" id="members"></section>
 </main>
 
 <script>
@@ -173,9 +176,10 @@ function pipelineCard(pl){
 }
 
 function render(s){
-  $("#stamp").textContent = "ข้อมูล ณ "+when(s.generated)+" ("+ago(s.generated)+") · อัปเดตทุก 15 นาที";
+  $("#stamp").textContent = "ข้อมูล ณ "+when(s.generated)+" ("+ago(s.generated)+") · อัปเดตอัตโนมัติทุก 5 นาที";
   $("#board").href = s.board;
   if (s.refresh) $("#refresh").href = s.refresh;
+  if (s.invite) $("#invite").href = s.invite;
   const P=s.projects, commits=P.reduce((a,p)=>a+p.github.commits_7d,0);
   const open=P.flatMap(p=>p.github.issues.filter(i=>i.state==="open"));
   const tick=open.reduce((a,i)=>a+i.done,0), boxes=open.reduce((a,i)=>a+i.total,0);
@@ -189,6 +193,10 @@ function render(s){
   ].map(([v,l])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
   $("#projects").innerHTML = P.map(projectCard).join("");
   $("#pipelines").innerHTML = s.pipelines.map(pipelineCard).join("");
+  const mem=s.hf_members||[];
+  $("#members").innerHTML = mem.length?`<table><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อ</th><th>สิทธิ์</th></tr></thead><tbody>${
+    mem.map(m=>`<tr><td><a href="https://huggingface.co/${esc(m.user)}" target="_blank" rel="noopener">${esc(m.user)}</a></td><td>${esc(m.name)}</td><td><span class="pill ${m.role==="admin"?"info":m.role==="write"?"ok":"idle"}">${esc(m.role)}</span></td></tr>`).join("")
+  }</tbody></table><div class="sub">คนที่ยังไม่กดยอมรับคำเชิญจะยังไม่อยู่ในรายชื่อนี้</div>`:'<div class="empty">อ่านรายชื่อสมาชิกไม่ได้</div>';
   $("#errors").innerHTML = s.errors&&s.errors.length?`<div class="errors"><b>อ่านข้อมูลบางส่วนไม่ได้</b><br>${s.errors.map(esc).join("<br>")}</div>`:"";
 }
 

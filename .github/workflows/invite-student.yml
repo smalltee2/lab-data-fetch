@@ -1,0 +1,50 @@
+name: Invite student
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Project"
+        type: choice
+        options:
+          - "msc1 (Heat exposure)"
+          - "msc2 (Compound extreme)"
+          - "msc3 (PM2.5 downscaling)"
+      github_username:
+        description: "Student GitHub username (leave empty to skip)"
+        required: false
+      hf_username:
+        description: "Student Hugging Face username (leave empty to skip)"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  invite:
+    if: github.actor == 'smalltee2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Hide usernames from the public log
+        env:
+          GH_USER: ${{ inputs.github_username }}
+          HF_USER: ${{ inputs.hf_username }}
+        run: |
+          [ -n "$GH_USER" ] && echo "::add-mask::$GH_USER"
+          [ -n "$HF_USER" ] && echo "::add-mask::$HF_USER"
+          true
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - env:
+          GH_ADMIN_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PROJECT: ${{ inputs.project }}
+          GH_USER: ${{ inputs.github_username }}
+          HF_USER: ${{ inputs.hf_username }}
+        run: |
+          if [ -z "$GH_ADMIN_TOKEN" ]; then echo "Secret GH_ADMIN_TOKEN is not set."; exit 1; fi
+          python monitor/invite.py

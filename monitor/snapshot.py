@@ -28,6 +28,7 @@ PIPELINES = [{"repo": "lab-data-fetch", "workflow": "nexgddp-thailand.yml", "dat
               "label": "NEX-GDDP-CMIP6 Thailand"}]
 BOARD_URL = f"https://github.com/users/{OWNER}/projects/1"
 REFRESH_URL = f"https://github.com/{OWNER}/lab-data-fetch/actions/workflows/lab-monitor.yml"
+INVITE_URL = f"https://github.com/{OWNER}/lab-data-fetch/actions/workflows/invite-student.yml"
 # Commits by the supervisor (or made on his behalf) are not student activity.
 SUPERVISOR = {"smalltee2", "Teerachai Amnuaylojaroen", "teerachai.am@up.ac.th"}
 NOW = dt.datetime.now(dt.timezone.utc)
@@ -128,6 +129,19 @@ def hf_dataset(name):
     return out
 
 
+def hf_members():
+    r = requests.get(f"https://huggingface.co/api/organizations/{HF_ORG}/members",
+                     headers={"Authorization": f"Bearer {os.environ['HF_TOKEN']}"}, timeout=30)
+    if r.status_code >= 400:
+        errors.append(f"Hugging Face members: HTTP {r.status_code}")
+        return []
+    out = []
+    for m in r.json():
+        out.append({"user": m.get("user") or m.get("name"), "name": m.get("fullname") or "",
+                    "role": m.get("role") or ""})
+    return out
+
+
 def pipeline(pl):
     runs = (get(f"repos/{OWNER}/{pl['repo']}/actions/workflows/{pl['workflow']}/runs", per_page=5) or {}).get("workflow_runs", [])
     out = {"label": pl["label"], "url": f"https://github.com/{OWNER}/{pl['repo']}/actions", "runs": []}
@@ -148,11 +162,12 @@ def pipeline(pl):
 
 
 def main():
-    snap = {"generated": NOW.isoformat(), "board": BOARD_URL, "refresh": REFRESH_URL, "projects": [], "pipelines": []}
+    snap = {"generated": NOW.isoformat(), "board": BOARD_URL, "refresh": REFRESH_URL, "invite": INVITE_URL, "projects": [], "pipelines": []}
     for p in PROJECTS:
         entry = {"key": p["key"], "label": p["label"], "github": github_project(p), "data": hf_dataset(p["dataset"])}
         snap["projects"].append(entry)
     snap["pipelines"] = [pipeline(pl) for pl in PIPELINES]
+    snap["hf_members"] = hf_members()
     private = sum(x["data"].get("bytes", 0) for x in snap["projects"] if x["data"].get("private", True))
     snap["private_storage"] = {"bytes": private, "quota_bytes": 100 * 10**9}
     snap["errors"] = errors

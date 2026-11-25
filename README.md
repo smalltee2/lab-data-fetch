@@ -19,3 +19,9 @@ Source data: Thrasher et al. (2022), NASA Global Daily Downscaled Projections, C
 Workflow: `.github/workflows/lab-monitor.yml` · Code: `monitor/` · Output: private Hugging Face Space `smalltee2/lab-monitor`
 
 Every 5 minutes the workflow reads the three student repositories (commits, issues and their checkbox progress, pull requests, the latest `docs/PROGRESS.md` entry), the runs of the data workflows, and the Hugging Face datasets, then publishes `data.json` and the dashboard page to the private Space. Only the Space owner can open it. Secrets: `GH_MONITOR_TOKEN` (GitHub fine-grained token, read-only) and `HF_TOKEN`.
+
+## Invite a student
+
+Workflow: `.github/workflows/invite-student.yml` · Code: `monitor/invite.py`
+
+From the dashboard's "+ เพิ่มนิสิต" button (or Actions → Invite student → Run workflow): choose the project, type the student's GitHub and/or Hugging Face username, and run. It invites the student to the project repository with write access and adds them to the `smalltee2UPSEEN` organization with the write role. Only `smalltee2` can run it, and usernames are masked in the public log. Secret: `GH_ADMIN_TOKEN` (fine-grained, Administration: read and write on the three student repositories).
