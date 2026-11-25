@@ -20,9 +20,13 @@ OWNER = "smalltee2"
 HF_ORG = "smalltee2UPSEEN"
 SPACE = os.environ.get("MONITOR_SPACE", "smalltee2/lab-monitor")
 PROJECTS = [
-    {"key": "msc1", "label": "ป.โท1 · Heat exposure", "repo": "msc1-heat-exposure-th", "dataset": "msc1-heat-exposure-th"},
-    {"key": "msc2", "label": "ป.โท2 · Compound extreme", "repo": "msc2-compound-extreme-th", "dataset": "msc2-compound-extreme-th"},
-    {"key": "msc3", "label": "ป.โท3 · PM2.5 downscaling", "repo": "msc3-pm25-downscaling-th", "dataset": "msc3-pm25-downscaling-th"},
+    # student: GitHub / Hugging Face usernames; "name" overrides the display name if set
+    {"key": "msc1", "label": "ป.โท1 · Heat exposure", "repo": "msc1-heat-exposure-th", "dataset": "msc1-heat-exposure-th",
+     "student": {"gh": "nichass1162", "hf": "Nicha1162", "name": ""}},
+    {"key": "msc2", "label": "ป.โท2 · Compound extreme", "repo": "msc2-compound-extreme-th", "dataset": "msc2-compound-extreme-th",
+     "student": {"gh": "Thanyathipp28", "hf": "Thanyathip28", "name": ""}},
+    {"key": "msc3", "label": "ป.โท3 · PM2.5 downscaling", "repo": "msc3-pm25-downscaling-th", "dataset": "msc3-pm25-downscaling-th",
+     "student": {"gh": "", "hf": "", "name": ""}},
 ]
 PIPELINES = [{"repo": "lab-data-fetch", "workflow": "nexgddp-thailand.yml", "dataset": "nexgddp-cmip6-thailand",
               "label": "NEX-GDDP-CMIP6 Thailand"}]
@@ -161,13 +165,32 @@ def pipeline(pl):
     return out
 
 
+def student_name(st, members):
+    """Display name: configured name, else Hugging Face full name, else GitHub name, else username."""
+    if st.get("name"):
+        return st["name"]
+    for m in members:
+        if st.get("hf") and (m.get("user") or "").lower() == st["hf"].lower() and m.get("name"):
+            return m["name"]
+    if st.get("gh"):
+        u = get(f"users/{st['gh']}")
+        if u and u.get("name"):
+            return u["name"]
+        return st["gh"]
+    return ""
+
+
 def main():
     snap = {"generated": NOW.isoformat(), "board": BOARD_URL, "refresh": REFRESH_URL, "invite": INVITE_URL, "projects": [], "pipelines": []}
+    members = hf_members()
+    snap["hf_members"] = members
     for p in PROJECTS:
-        entry = {"key": p["key"], "label": p["label"], "github": github_project(p), "data": hf_dataset(p["dataset"])}
+        st = p.get("student", {})
+        entry = {"key": p["key"], "label": p["label"], "student": student_name(st, members),
+                 "student_gh": st.get("gh", ""), "student_hf": st.get("hf", ""),
+                 "github": github_project(p), "data": hf_dataset(p["dataset"])}
         snap["projects"].append(entry)
     snap["pipelines"] = [pipeline(pl) for pl in PIPELINES]
-    snap["hf_members"] = hf_members()
     private = sum(x["data"].get("bytes", 0) for x in snap["projects"] if x["data"].get("private", True))
     snap["private_storage"] = {"bytes": private, "quota_bytes": 100 * 10**9}
     snap["errors"] = errors
