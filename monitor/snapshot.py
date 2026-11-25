@@ -20,13 +20,14 @@ OWNER = "smalltee2"
 HF_ORG = "smalltee2UPSEEN"
 SPACE = os.environ.get("MONITOR_SPACE", "smalltee2/lab-monitor")
 PROJECTS = [
-    # student: GitHub / Hugging Face usernames; "name" overrides the display name if set
+    # Student usernames are kept in students.json inside the private Space (written by invite.py),
+    # not in this public repository.
     {"key": "msc1", "label": "ป.โท1 · Heat exposure", "repo": "msc1-heat-exposure-th", "dataset": "msc1-heat-exposure-th",
-     "student": {"gh": "nichass1162", "hf": "Nicha1162", "name": ""}},
+     "student": {}},
     {"key": "msc2", "label": "ป.โท2 · Compound extreme", "repo": "msc2-compound-extreme-th", "dataset": "msc2-compound-extreme-th",
-     "student": {"gh": "Thanyathipp28", "hf": "Thanyathip28", "name": ""}},
+     "student": {}},
     {"key": "msc3", "label": "ป.โท3 · PM2.5 downscaling", "repo": "msc3-pm25-downscaling-th", "dataset": "msc3-pm25-downscaling-th",
-     "student": {"gh": "", "hf": "", "name": ""}},
+     "student": {}},
 ]
 PIPELINES = [{"repo": "lab-data-fetch", "workflow": "nexgddp-thailand.yml", "dataset": "nexgddp-cmip6-thailand",
               "label": "NEX-GDDP-CMIP6 Thailand"}]
@@ -165,6 +166,16 @@ def pipeline(pl):
     return out
 
 
+def load_students():
+    """students.json in the private Space: {"msc1": {"gh": ..., "hf": ..., "name": ...}, ...}."""
+    from huggingface_hub import hf_hub_download
+    try:
+        path = hf_hub_download(SPACE, "students.json", repo_type="space", token=os.environ["HF_TOKEN"])
+        return json.loads(Path(path).read_text())
+    except Exception:
+        return {}
+
+
 def student_name(st, members):
     """Display name: configured name, else Hugging Face full name, else GitHub name, else username."""
     if st.get("name"):
@@ -184,8 +195,9 @@ def main():
     snap = {"generated": NOW.isoformat(), "board": BOARD_URL, "refresh": REFRESH_URL, "invite": INVITE_URL, "projects": [], "pipelines": []}
     members = hf_members()
     snap["hf_members"] = members
+    students = load_students()
     for p in PROJECTS:
-        st = p.get("student", {})
+        st = {**p.get("student", {}), **students.get(p["key"], {})}
         entry = {"key": p["key"], "label": p["label"], "student": student_name(st, members),
                  "student_gh": st.get("gh", ""), "student_hf": st.get("hf", ""),
                  "github": github_project(p), "data": hf_dataset(p["dataset"])}

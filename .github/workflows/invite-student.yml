@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: read
+  actions: write   # to start a fresh dashboard snapshot after inviting
 
 jobs:
   invite:
@@ -38,7 +39,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install requests
+      - run: pip install requests "huggingface_hub>=0.34"
       - env:
           GH_ADMIN_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -46,5 +47,9 @@ jobs:
           GH_USER: ${{ inputs.github_username }}
           HF_USER: ${{ inputs.hf_username }}
         run: |
-          if [ -z "$GH_ADMIN_TOKEN" ]; then echo "Secret GH_ADMIN_TOKEN is not set."; exit 1; fi
           python monitor/invite.py
+      - name: Refresh the dashboard
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run lab-monitor.yml -R "${{ github.repository }}" --ref main
