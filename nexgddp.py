@@ -131,7 +131,17 @@ def cmd_plan(a):
     token = os.environ.get("HF_TOKEN")
     if token:
         api = HfApi(token=token)
-        api.create_repo(a.hf_repo, repo_type="dataset", private=False, exist_ok=True)
+        try:
+            api.create_repo(a.hf_repo, repo_type="dataset", private=False, exist_ok=True)
+        except Exception as e:
+            # A token that may write to the dataset but not create repos in the org is fine
+            # once the dataset exists; otherwise stop with a clear message.
+            try:
+                api.repo_info(a.hf_repo, repo_type="dataset")
+                log("dataset exists; token cannot create repos, continuing:", str(e)[:120])
+            except Exception:
+                sys.exit(f"Cannot create {a.hf_repo}. Either create it on huggingface.co (public dataset) "
+                         "or use an HF_TOKEN of type Write from an admin of the organization. Error: " + str(e)[:300])
         card = Path(__file__).with_name("dataset_card.md").read_text()
         card = card.replace("{{MODELS}}", ", ".join(models)).replace("{{SCENARIOS}}", ", ".join(a.scenarios))
         api.upload_file(path_or_fileobj=card.encode(), path_in_repo="README.md", repo_id=a.hf_repo,
