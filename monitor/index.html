@@ -59,6 +59,9 @@
   table{width:100%;border-collapse:collapse;font-size:13.5px}
   th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
   th{color:var(--soft);font-weight:600;font-size:12.5px}
+  .edit{border:0;background:none;padding:2px 4px;margin-left:4px;color:var(--soft);cursor:pointer;border-radius:6px;font-size:14px;vertical-align:middle}
+  .edit:hover{color:var(--blue);background:var(--blue-soft)}
+  .name-input{font:inherit;font-size:16px;font-weight:600;padding:4px 8px;border:1px solid var(--blue);border-radius:8px;width:100%;max-width:260px}
   .errors{background:var(--red-soft);border:1px solid #F5C2C2;color:var(--red);border-radius:var(--radius);padding:12px 16px;font-size:13.5px}
   .empty{color:var(--soft);font-size:13.5px}
   @media (max-width:1000px){.grid3{grid-template-columns:1fr}.pipe{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -132,11 +135,41 @@ function dataBlock(d){
     <a class="sub" href="${esc(d.url)}" target="_blank" rel="noopener">เปิด dataset ↗</a>`;
 }
 
+const NAMES_KEY="labmonitor.names";
+function loadNames(){ try{ return JSON.parse(localStorage.getItem(NAMES_KEY)||"{}"); }catch(e){ return {}; } }
+function saveNames(n){ try{ localStorage.setItem(NAMES_KEY, JSON.stringify(n)); }catch(e){} }
+function displayName(p){
+  const n=loadNames()[p.key];
+  if(n) return esc(n);
+  return p.student?esc(p.student):'<span style="color:var(--soft)">ยังไม่มีนิสิต</span>';
+}
+let LAST=null;
+function startEdit(key){
+  const h3=document.getElementById("name-"+key); if(!h3) return;
+  const p=LAST.projects.find(x=>x.key===key);
+  const cur=loadNames()[key]||p.student||"";
+  h3.innerHTML=`<input class="name-input" aria-label="ชื่อนิสิต" value="${esc(cur)}" placeholder="ชื่อนิสิต">
+    <button class="btn" type="button" data-save="${esc(key)}" style="margin-top:6px">บันทึก</button>
+    <button class="btn" type="button" data-reset="${esc(key)}" style="margin-top:6px">ใช้ชื่อจากระบบ</button>`;
+  const inp=h3.querySelector("input"); inp.focus(); inp.select();
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter") finishEdit(key, inp.value); if(e.key==="Escape") render(LAST); });
+}
+function finishEdit(key, value){
+  const n=loadNames(); const v=(value||"").trim();
+  if(v) n[key]=v; else delete n[key];
+  saveNames(n); render(LAST);
+}
+document.addEventListener("click",e=>{
+  const ed=e.target.closest("[data-key]"); if(ed&&ed.classList.contains("edit")) return startEdit(ed.dataset.key);
+  const sv=e.target.closest("[data-save]"); if(sv) return finishEdit(sv.dataset.save, sv.parentElement.querySelector("input").value);
+  const rs=e.target.closest("[data-reset]"); if(rs) return finishEdit(rs.dataset.reset, "");
+});
+
 function projectCard(p){
   const g=p.github, c=g.last_commit;
   return `<article class="card">
     <div class="row" style="justify-content:space-between;align-items:flex-start"><div style="min-width:0">
-      <h3>${p.student?esc(p.student):'<span style="color:var(--soft)">ยังไม่มีนิสิต</span>'}</h3>
+      <h3 id="name-${esc(p.key)}">${displayName(p)}<button class="edit" type="button" aria-label="แก้ชื่อนิสิต" title="แก้ชื่อ" data-key="${esc(p.key)}">✎</button></h3>
       <div class="sub">${esc(p.label)}</div></div>${activity(g)}</div>
     <div class="sub"><a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.repo)} ↗</a>${p.student_gh?` · GitHub <a href="https://github.com/${esc(p.student_gh)}" target="_blank" rel="noopener">${esc(p.student_gh)}</a>`:""}</div>
     <div class="sect"><div class="t">Commit ล่าสุดของนิสิต</div>
@@ -178,6 +211,7 @@ function pipelineCard(pl){
 }
 
 function render(s){
+  LAST=s;
   $("#stamp").textContent = "ข้อมูล ณ "+when(s.generated)+" ("+ago(s.generated)+") · อัปเดตอัตโนมัติทุก 5 นาที";
   $("#board").href = s.board;
   if (s.refresh) $("#refresh").href = s.refresh;
