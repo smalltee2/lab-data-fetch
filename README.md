@@ -6,7 +6,7 @@ Download scripts for the climate data used by the M.Sc. projects of the Atmosphe
 
 Workflow: `.github/workflows/nexgddp-thailand.yml` · Script: `nexgddp.py` · Output: Hugging Face dataset `smalltee2UPSEEN/nexgddp-cmip6-thailand`
 
-The workflow first lists the models on NASA's public bucket (`s3://nex-gddp-cmip6`), then runs one job per model and scenario (up to 10 at a time). Each job fetches the yearly global files, clips them to latitude 5.375–20.875° N and longitude 97.125–105.875° E, joins the years into one NetCDF per variable, and uploads them in one commit. Files already on Hugging Face are skipped, so a failed job can be re-run without repeating finished work.
+The workflow first lists the models on NASA's public bucket (`s3://nex-gddp-cmip6`), then runs one job per model and scenario (up to 18 at a time). Each job fetches the yearly global files, clips them to latitude 5.375–20.875° N and longitude 97.125–105.875° E, joins the years into one NetCDF per variable, and uploads them in one commit. Files already on Hugging Face are skipped, so a failed job can be re-run without repeating finished work.
 
 Run it from the Actions tab (Run workflow) or with `gh workflow run nexgddp-thailand.yml`. Defaults: all models; `historical ssp245 ssp585`; variables `tasmax tasmin tas hurs sfcWind rsds rlds pr`. For a quick test, enter one or two model names in the `models` field.
 
