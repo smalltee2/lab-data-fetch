@@ -18,4 +18,4 @@ Source data: Thrasher et al. (2022), NASA Global Daily Downscaled Projections, C
 
 Workflow: `.github/workflows/lab-monitor.yml` · Code: `monitor/` · Output: private Hugging Face Space `smalltee2/lab-monitor`
 
-Every 15 minutes the workflow reads the three student repositories (commits, issues and their checkbox progress, pull requests, the latest `docs/PROGRESS.md` entry), the runs of the data workflows, and the Hugging Face datasets, then publishes `data.json` and the dashboard page to the private Space. Only the Space owner can open it. Secrets: `GH_MONITOR_TOKEN` (GitHub fine-grained token, read-only) and `HF_TOKEN`.
+Every 5 minutes the workflow reads the three student repositories (commits, issues and their checkbox progress, pull requests, the latest `docs/PROGRESS.md` entry), the runs of the data workflows, and the Hugging Face datasets, then publishes `data.json` and the dashboard page to the private Space. Only the Space owner can open it. Secrets: `GH_MONITOR_TOKEN` (GitHub fine-grained token, read-only) and `HF_TOKEN`.

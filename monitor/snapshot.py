@@ -1,7 +1,7 @@
 """Collect a read-only snapshot of the lab's GitHub repos and Hugging Face datasets
 and publish it, with the dashboard page, to a private static Hugging Face Space.
 
-Runs every 15 minutes on GitHub Actions (.github/workflows/lab-monitor.yml).
+Runs every 5 minutes on GitHub Actions (.github/workflows/lab-monitor.yml).
 Needs two secrets: GH_MONITOR_TOKEN (GitHub, read-only) and HF_TOKEN (Hugging Face, write).
 Nothing secret is written to data.json.
 """
@@ -27,6 +27,9 @@ PROJECTS = [
 PIPELINES = [{"repo": "lab-data-fetch", "workflow": "nexgddp-thailand.yml", "dataset": "nexgddp-cmip6-thailand",
               "label": "NEX-GDDP-CMIP6 Thailand"}]
 BOARD_URL = f"https://github.com/users/{OWNER}/projects/1"
+REFRESH_URL = f"https://github.com/{OWNER}/lab-data-fetch/actions/workflows/lab-monitor.yml"
+# Commits by the supervisor (or made on his behalf) are not student activity.
+SUPERVISOR = {"smalltee2", "Teerachai Amnuaylojaroen", "teerachai.am@up.ac.th"}
 NOW = dt.datetime.now(dt.timezone.utc)
 
 gh = requests.Session()
@@ -64,16 +67,24 @@ def github_project(p):
     repo = p["repo"]
     info = {"repo": repo, "url": f"https://github.com/{OWNER}/{repo}"}
     since = (NOW - dt.timedelta(days=7)).isoformat()
-    commits = get(f"repos/{OWNER}/{repo}/commits", per_page=30) or []
-    recent = [c for c in commits if c["commit"]["author"]["date"] >= since[:19]]
-    info["last_commit"] = None
-    if commits:
-        c = commits[0]
-        info["last_commit"] = {"date": c["commit"]["author"]["date"], "message": c["commit"]["message"].split("\n")[0][:140],
-                               "author": (c.get("author") or {}).get("login") or c["commit"]["author"]["name"],
-                               "url": c["html_url"]}
+    commits = get(f"repos/{OWNER}/{repo}/commits", per_page=50) or []
+
+    def who(c):
+        return (c.get("author") or {}).get("login") or c["commit"]["author"]["name"]
+
+    def is_supervisor(c):
+        return who(c) in SUPERVISOR or c["commit"]["author"].get("email") in SUPERVISOR
+
+    def brief(c):
+        return {"date": c["commit"]["author"]["date"], "message": c["commit"]["message"].split("\n")[0][:140],
+                "author": who(c), "url": c["html_url"]}
+
+    student = [c for c in commits if not is_supervisor(c)]
+    recent = [c for c in student if c["commit"]["author"]["date"] >= since[:19]]
+    info["last_commit"] = brief(student[0]) if student else None
+    info["last_any_commit"] = brief(commits[0]) if commits else None
     info["commits_7d"] = len(recent)
-    info["authors_7d"] = sorted({(c.get("author") or {}).get("login") or c["commit"]["author"]["name"] for c in recent})
+    info["authors_7d"] = sorted({who(c) for c in recent})
     issues = get(f"repos/{OWNER}/{repo}/issues", state="all", per_page=50) or []
     info["issues"] = []
     info["pulls_open"] = 0
@@ -137,7 +148,7 @@ def pipeline(pl):
 
 
 def main():
-    snap = {"generated": NOW.isoformat(), "board": BOARD_URL, "projects": [], "pipelines": []}
+    snap = {"generated": NOW.isoformat(), "board": BOARD_URL, "refresh": REFRESH_URL, "projects": [], "pipelines": []}
     for p in PROJECTS:
         entry = {"key": p["key"], "label": p["label"], "github": github_project(p), "data": hf_dataset(p["dataset"])}
         snap["projects"].append(entry)

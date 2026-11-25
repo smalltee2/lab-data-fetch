@@ -71,7 +71,8 @@
   <nav>
     <a class="btn" id="board" href="#" target="_blank" rel="noopener">บอร์ดงาน</a>
     <a class="btn" href="https://huggingface.co/smalltee2UPSEEN" target="_blank" rel="noopener">Hugging Face</a>
-    <button class="btn" type="button" id="reload">รีเฟรช</button>
+    <a class="btn" id="refresh" href="#" target="_blank" rel="noopener" title="เปิด GitHub แล้วกด Run workflow เพื่ออัปเดตทันที">อัปเดตเดี๋ยวนี้</a>
+    <button class="btn" type="button" id="reload">โหลดใหม่</button>
   </nav>
 </div></header>
 
@@ -97,7 +98,7 @@ function ago(iso){
 const when = iso => iso ? new Date(iso).toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"}) : "—";
 
 function activity(g){
-  if(!g.last_commit) return '<span class="pill idle">ยังไม่มี commit</span>';
+  if(!g.last_commit) return '<span class="pill idle">นิสิตยังไม่มี commit</span>';
   const days=(Date.now()-new Date(g.last_commit.date))/864e5;
   if(days<=3) return '<span class="pill ok">มีความเคลื่อนไหว</span>';
   if(days<=10) return '<span class="pill warn">เงียบ '+Math.floor(days)+' วัน</span>';
@@ -133,7 +134,7 @@ function projectCard(p){
   return `<article class="card">
     <div class="row" style="justify-content:space-between"><h3>${esc(p.label)}</h3>${activity(g)}</div>
     <div class="sub"><a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.repo)} ↗</a></div>
-    <div class="sect"><div class="t">Commit ล่าสุด</div>
+    <div class="sect"><div class="t">Commit ล่าสุดของนิสิต</div>
       ${c?`<div class="commit"><a class="m" href="${esc(c.url)}" target="_blank" rel="noopener" style="color:var(--ink)">${esc(c.message)}</a>
       <div class="sub">${esc(c.author)} · ${ago(c.date)}</div></div>`:'<div class="empty">—</div>'}
       <div class="sub" style="margin-top:6px">7 วันที่ผ่านมา: <b style="color:var(--ink)">${g.commits_7d}</b> commit${g.authors_7d.length?" โดย "+g.authors_7d.map(esc).join(", "):""}${g.pulls_open?` · <span class="pill info">PR รอตรวจ ${g.pulls_open}</span>`:""}</div>
@@ -174,13 +175,14 @@ function pipelineCard(pl){
 function render(s){
   $("#stamp").textContent = "ข้อมูล ณ "+when(s.generated)+" ("+ago(s.generated)+") · อัปเดตทุก 15 นาที";
   $("#board").href = s.board;
+  if (s.refresh) $("#refresh").href = s.refresh;
   const P=s.projects, commits=P.reduce((a,p)=>a+p.github.commits_7d,0);
   const open=P.flatMap(p=>p.github.issues.filter(i=>i.state==="open"));
   const tick=open.reduce((a,i)=>a+i.done,0), boxes=open.reduce((a,i)=>a+i.total,0);
   const prs=P.reduce((a,p)=>a+p.github.pulls_open,0);
   const ps=s.private_storage||{bytes:0,quota_bytes:1e11};
   $("#kpis").innerHTML = [
-    [commits, "commit ใน 7 วัน (ทุกโครงการ)"],
+    [commits, "commit ของนิสิตใน 7 วัน (ทุกโครงการ)"],
     [boxes?Math.round(100*tick/boxes)+"%":"—", `งานที่ติ๊กแล้ว ${tick}/${boxes} ใน ${open.length} issue ที่เปิดอยู่`],
     [prs, "pull request รออาจารย์ตรวจ"],
     [fmtBytes(ps.bytes), `พื้นที่ private ที่ใช้ จาก ${fmtBytes(ps.quota_bytes)}`],
