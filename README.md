@@ -13,3 +13,9 @@ Run it from the Actions tab (Run workflow) or with `gh workflow run nexgddp-thai
 Required secret: `HF_TOKEN`, a Hugging Face token with write access to the `smalltee2UPSEEN` organization (Settings → Secrets and variables → Actions, or `gh secret set HF_TOKEN`).
 
 Source data: Thrasher et al. (2022), NASA Global Daily Downscaled Projections, CMIP6, *Scientific Data* 9, 262, https://doi.org/10.1038/s41597-022-01393-4.
+
+## Lab monitor
+
+Workflow: `.github/workflows/lab-monitor.yml` · Code: `monitor/` · Output: private Hugging Face Space `smalltee2/lab-monitor`
+
+Every 15 minutes the workflow reads the three student repositories (commits, issues and their checkbox progress, pull requests, the latest `docs/PROGRESS.md` entry), the runs of the data workflows, and the Hugging Face datasets, then publishes `data.json` and the dashboard page to the private Space. Only the Space owner can open it. Secrets: `GH_MONITOR_TOKEN` (GitHub fine-grained token, read-only) and `HF_TOKEN`.

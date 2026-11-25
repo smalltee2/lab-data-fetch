@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF; --line:#E4E7EC; --ink:#111827; --muted:#5B6472; --soft:#8A93A1;
+    --blue:#2563EB; --blue-soft:#EAF1FF; --orange:#C2410C; --orange-soft:#FFF1E8;
+    --green:#15803D; --green-soft:#E8F6EE; --amber:#B45309; --amber-soft:#FEF6E4; --red:#B91C1C; --red-soft:#FDECEC;
+    --radius:14px; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 'IBM Plex Sans Thai',system-ui,sans-serif}
+  a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+  header{position:sticky;top:0;z-index:5;background:rgba(245,246,248,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+  .bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 0}
+  .brand{font-weight:700;font-size:19px;letter-spacing:-.01em}
+  .stamp{color:var(--muted);font-size:13.5px}
+  .bar nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-size:13.5px;cursor:pointer}
+  .btn:hover{border-color:#C9CED6;text-decoration:none}
+  main{padding:22px 0 60px}
+  h2{font-size:15px;font-weight:600;color:var(--muted);margin:28px 0 12px;letter-spacing:.01em}
+  .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+  .kpi .l{color:var(--muted);font-size:13.5px}
+  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+  .card h3{margin:0;font-size:17px;font-weight:700}
+  .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .sub{color:var(--muted);font-size:13.5px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:600}
+  .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .ok{color:var(--green);background:var(--green-soft)} .warn{color:var(--amber);background:var(--amber-soft)}
+  .bad{color:var(--red);background:var(--red-soft)} .info{color:var(--blue);background:var(--blue-soft)} .idle{color:var(--soft);background:#F0F2F5}
+  .sect{border-top:1px solid var(--line);padding-top:12px}
+  .sect .t{font-size:12.5px;font-weight:600;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .commit{font-size:14px} .commit .m{font-weight:500}
+  .issue{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:6px 0}
+  .issue + .issue{border-top:1px dashed var(--line)}
+  .issue a{color:var(--ink);font-size:14px} .issue .n{color:var(--soft);font-size:12.5px;margin-right:4px}
+  .meter{grid-column:1/-1;height:6px;background:#EEF0F3;border-radius:6px;overflow:hidden}
+  .meter i{display:block;height:100%;background:var(--blue);border-radius:6px}
+  .meter.done i{background:var(--green)}
+  .frac{font:500 12.5px var(--mono);color:var(--muted)}
+  details summary{cursor:pointer;color:var(--blue);font-size:13.5px}
+  pre{white-space:pre-wrap;font:13px/1.55 var(--mono);background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0 0;max-height:240px;overflow:auto}
+  .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .stat{background:#F7F8FA;border-radius:10px;padding:8px 10px}
+  .stat b{display:block;font-size:16px} .stat span{font-size:12px;color:var(--muted)}
+  .folders{font:12.5px/1.7 var(--mono);color:var(--muted)}
+  .pipe{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--soft);font-weight:600;font-size:12.5px}
+  .errors{background:var(--red-soft);border:1px solid #F5C2C2;color:var(--red);border-radius:var(--radius);padding:12px 16px;font-size:13.5px}
+  .empty{color:var(--soft);font-size:13.5px}
+  @media (max-width:1000px){.grid3{grid-template-columns:1fr}.pipe{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:520px){.wrap{padding:0 14px}.kpi .v{font-size:23px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header><div class="wrap bar">
+  <div><div class="brand">Lab Monitor</div><div class="stamp" id="stamp">กำลังโหลด…</div></div>
+  <nav>
+    <a class="btn" id="board" href="#" target="_blank" rel="noopener">บอร์ดงาน</a>
+    <a class="btn" href="https://huggingface.co/smalltee2UPSEEN" target="_blank" rel="noopener">Hugging Face</a>
+    <button class="btn" type="button" id="reload">รีเฟรช</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <div id="errors"></div>
+  <section aria-label="ภาพรวม"><div class="kpis" id="kpis"></div></section>
+  <h2>นิสิตแต่ละโครงการ</h2>
+  <section class="grid3" id="projects"></section>
+  <h2>การดาวน์โหลดข้อมูล (GitHub Actions → Hugging Face)</h2>
+  <section id="pipelines"></section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtBytes = b => { if (!b) return "0 B"; const u=["B","KB","MB","GB","TB"]; const i=Math.min(4,Math.floor(Math.log(b)/Math.log(1000))); return (b/1000**i).toFixed(i>1?1:0)+" "+u[i]; };
+function ago(iso){
+  if(!iso) return "—";
+  const s=(Date.now()-new Date(iso))/1000;
+  if(s<60) return "เมื่อสักครู่"; if(s<3600) return Math.floor(s/60)+" นาทีที่แล้ว";
+  if(s<86400) return Math.floor(s/3600)+" ชม.ที่แล้ว"; return Math.floor(s/86400)+" วันที่แล้ว";
+}
+const when = iso => iso ? new Date(iso).toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"}) : "—";
+
+function activity(g){
+  if(!g.last_commit) return '<span class="pill idle">ยังไม่มี commit</span>';
+  const days=(Date.now()-new Date(g.last_commit.date))/864e5;
+  if(days<=3) return '<span class="pill ok">มีความเคลื่อนไหว</span>';
+  if(days<=10) return '<span class="pill warn">เงียบ '+Math.floor(days)+' วัน</span>';
+  return '<span class="pill bad">ไม่มีงาน '+Math.floor(days)+' วัน</span>';
+}
+
+function issueRows(list){
+  const open=list.filter(i=>i.state==="open");
+  if(!list.length) return '<div class="empty">ยังไม่มี issue</div>';
+  return list.slice(0,6).map(i=>{
+    const pct=i.total?Math.round(100*i.done/i.total):(i.state==="closed"?100:0);
+    const done=i.state==="closed"||pct===100;
+    return `<div class="issue">
+      <a href="${esc(i.url)}" target="_blank" rel="noopener"><span class="n">#${i.number}</span>${esc(i.title)}</a>
+      <span class="frac">${i.state==="closed"?"ปิดแล้ว":(i.total?i.done+"/"+i.total:"—")}${i.comments?" · 💬"+i.comments:""}</span>
+      <div class="meter ${done?"done":""}"><i style="width:${pct}%"></i></div></div>`;
+  }).join("") + (open.length>6?`<div class="sub">และอีก ${open.length-6} issue</div>`:"");
+}
+
+function dataBlock(d){
+  if(!d || d.files===undefined) return '<div class="empty">อ่าน dataset ไม่ได้</div>';
+  const folders=Object.entries(d.folders||{}).map(([k,v])=>`${esc(k)}  ${v}`).join("<br>")||"ยังไม่มีไฟล์ข้อมูล";
+  return `<div class="stats">
+      <div class="stat"><b>${d.files}</b><span>ไฟล์</span></div>
+      <div class="stat"><b>${fmtBytes(d.bytes)}</b><span>ขนาด</span></div>
+      <div class="stat"><b>${ago(d.last_update)}</b><span>อัปเดตล่าสุด</span></div></div>
+    <div class="folders">${folders}</div>
+    <a class="sub" href="${esc(d.url)}" target="_blank" rel="noopener">เปิด dataset ↗</a>`;
+}
+
+function projectCard(p){
+  const g=p.github, c=g.last_commit;
+  return `<article class="card">
+    <div class="row" style="justify-content:space-between"><h3>${esc(p.label)}</h3>${activity(g)}</div>
+    <div class="sub"><a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.repo)} ↗</a></div>
+    <div class="sect"><div class="t">Commit ล่าสุด</div>
+      ${c?`<div class="commit"><a class="m" href="${esc(c.url)}" target="_blank" rel="noopener" style="color:var(--ink)">${esc(c.message)}</a>
+      <div class="sub">${esc(c.author)} · ${ago(c.date)}</div></div>`:'<div class="empty">—</div>'}
+      <div class="sub" style="margin-top:6px">7 วันที่ผ่านมา: <b style="color:var(--ink)">${g.commits_7d}</b> commit${g.authors_7d.length?" โดย "+g.authors_7d.map(esc).join(", "):""}${g.pulls_open?` · <span class="pill info">PR รอตรวจ ${g.pulls_open}</span>`:""}</div>
+    </div>
+    <div class="sect"><div class="t">งาน (Issues)</div>${issueRows(g.issues)}</div>
+    <div class="sect"><div class="t">บันทึกล่าสุดใน PROGRESS.md</div>
+      ${g.progress_entry?`<details><summary>${esc(g.progress_entry.split("\n")[0].replace(/^##\s*/,""))}</summary><pre>${esc(g.progress_entry)}</pre></details>`:'<div class="empty">นิสิตยังไม่ได้เขียนบันทึก</div>'}</div>
+    <div class="sect"><div class="t">ข้อมูลบน Hugging Face</div>${dataBlock(p.data)}</div>
+  </article>`;
+}
+
+function runStatus(r){
+  if(r.status!=="completed") return `<span class="pill info">กำลังรัน</span>`;
+  return r.conclusion==="success"?`<span class="pill ok">สำเร็จ</span>`:r.conclusion==="cancelled"?`<span class="pill idle">ยกเลิก</span>`:`<span class="pill bad">ล้มเหลว</span>`;
+}
+
+function pipelineCard(pl){
+  const runs=pl.runs.length?`<table><thead><tr><th>รอบที่รัน</th><th>สถานะ</th><th>Jobs</th><th>เริ่ม</th></tr></thead><tbody>${
+    pl.runs.map(r=>`<tr><td><a href="${esc(r.url)}" target="_blank" rel="noopener">#${String(r.id).slice(-5)}</a></td>
+      <td>${runStatus(r)}${r.jobs_failed?`<div class="sub" style="color:var(--red)">ล้ม: ${r.failed_names.map(esc).join(", ")}</div>`:""}</td>
+      <td><span class="frac">${r.jobs_done}/${r.jobs_total}</span>${r.jobs_running?` <span class="sub">(${r.jobs_running} กำลังรัน)</span>`:""}
+        <div class="meter ${r.jobs_done===r.jobs_total&&r.jobs_total?"done":""}" style="margin-top:4px"><i style="width:${r.jobs_total?Math.round(100*r.jobs_done/r.jobs_total):0}%"></i></div></td>
+      <td class="sub">${ago(r.started)}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">ยังไม่มีการรัน</div>';
+  const d=pl.dataset||{};
+  return `<div class="pipe">
+    <article class="card"><div class="row" style="justify-content:space-between"><h3>${esc(pl.label)}</h3>
+      <a class="sub" href="${esc(pl.url)}" target="_blank" rel="noopener">GitHub Actions ↗</a></div>${runs}</article>
+    <article class="card"><h3>Dataset สาธารณะ</h3>
+      ${d.files!==undefined?`<div class="stats">
+        <div class="stat"><b>${d.models?d.models.length:0}</b><span>แบบจำลอง</span></div>
+        <div class="stat"><b>${d.files}</b><span>ไฟล์</span></div>
+        <div class="stat"><b>${fmtBytes(d.bytes)}</b><span>ขนาด</span></div></div>
+        <div class="folders">${Object.entries(d.folders||{}).map(([k,v])=>esc(k)+"  "+v).join("<br>")||"ยังไม่มีไฟล์"}</div>
+        <a class="sub" href="${esc(d.url)}" target="_blank" rel="noopener">เปิด dataset ↗</a>`:'<div class="empty">ยังไม่มี dataset</div>'}
+    </article></div>`;
+}
+
+function render(s){
+  $("#stamp").textContent = "ข้อมูล ณ "+when(s.generated)+" ("+ago(s.generated)+") · อัปเดตทุก 15 นาที";
+  $("#board").href = s.board;
+  const P=s.projects, commits=P.reduce((a,p)=>a+p.github.commits_7d,0);
+  const open=P.flatMap(p=>p.github.issues.filter(i=>i.state==="open"));
+  const tick=open.reduce((a,i)=>a+i.done,0), boxes=open.reduce((a,i)=>a+i.total,0);
+  const prs=P.reduce((a,p)=>a+p.github.pulls_open,0);
+  const ps=s.private_storage||{bytes:0,quota_bytes:1e11};
+  $("#kpis").innerHTML = [
+    [commits, "commit ใน 7 วัน (ทุกโครงการ)"],
+    [boxes?Math.round(100*tick/boxes)+"%":"—", `งานที่ติ๊กแล้ว ${tick}/${boxes} ใน ${open.length} issue ที่เปิดอยู่`],
+    [prs, "pull request รออาจารย์ตรวจ"],
+    [fmtBytes(ps.bytes), `พื้นที่ private ที่ใช้ จาก ${fmtBytes(ps.quota_bytes)}`],
+  ].map(([v,l])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+  $("#projects").innerHTML = P.map(projectCard).join("");
+  $("#pipelines").innerHTML = s.pipelines.map(pipelineCard).join("");
+  $("#errors").innerHTML = s.errors&&s.errors.length?`<div class="errors"><b>อ่านข้อมูลบางส่วนไม่ได้</b><br>${s.errors.map(esc).join("<br>")}</div>`:"";
+}
+
+async function load(){
+  try{ const r=await fetch("data.json?t="+Date.now(),{cache:"no-store"}); render(await r.json()); }
+  catch(e){ $("#stamp").textContent="โหลดข้อมูลไม่ได้: "+e.message; }
+}
+$("#reload").addEventListener("click", load);
+load(); setInterval(load, 5*60*1000);
+</script>
+</body>
+</html>
