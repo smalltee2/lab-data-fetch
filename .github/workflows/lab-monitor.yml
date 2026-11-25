@@ -25,4 +25,8 @@ jobs:
       - env:
           GH_MONITOR_TOKEN: ${{ secrets.GH_MONITOR_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: python monitor/snapshot.py
+        run: |
+          if [ -z "$GH_MONITOR_TOKEN" ] || [ -z "$HF_TOKEN" ]; then
+            echo "Secrets GH_MONITOR_TOKEN / HF_TOKEN not set yet - skipping."; exit 0
+          fi
+          python monitor/snapshot.py
